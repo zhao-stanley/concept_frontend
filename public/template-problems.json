@@ -1,0 +1,98 @@
+[
+  {
+    "id": "kilter-001",
+    "name": "Crimp City",
+    "grade": "V5",
+    "board": "kilter",
+    "setter": "Alex Honnold",
+    "holds": ["A5", "B7", "C3", "D8", "E4", "F6", "G2", "H9"]
+  },
+  {
+    "id": "kilter-002",
+    "name": "Sloper's Paradise",
+    "grade": "V7",
+    "board": "kilter",
+    "setter": "Adam Ondra",
+    "holds": ["A2", "B4", "C6", "D8", "E5", "F7", "G3", "H1"]
+  },
+  {
+    "id": "tension-001",
+    "name": "Pinch Perfect",
+    "grade": "V6",
+    "board": "tension",
+    "setter": "Ashima Shiraishi",
+    "holds": ["A3", "B5", "C7", "D2", "E6", "F4", "G8", "H5"]
+  },
+  {
+    "id": "kilter-003",
+    "name": "The Roof Problem",
+    "grade": "V8",
+    "board": "kilter",
+    "setter": "Magnus Midtbø",
+    "holds": ["A1", "B3", "C5", "D7", "E9", "F2", "G4", "H6"]
+  },
+  {
+    "id": "tension-002",
+    "name": "Dyno King",
+    "grade": "V4",
+    "board": "tension",
+    "setter": "Alex Honnold",
+    "holds": ["A6", "B8", "C4", "D1", "E7", "F3", "G5", "H2"]
+  },
+  {
+    "id": "kilter-004",
+    "name": "Balance Beam",
+    "grade": "V5",
+    "board": "kilter",
+    "setter": "Adam Ondra",
+    "holds": ["A4", "B6", "C8", "D5", "E3", "F1", "G7", "H4"]
+  },
+  {
+    "id": "tension-003",
+    "name": "Heel Hook Heaven",
+    "grade": "V7",
+    "board": "tension",
+    "setter": "Ashima Shiraishi",
+    "holds": ["A7", "B2", "C9", "D4", "E8", "F5", "G1", "H3"]
+  },
+  {
+    "id": "kilter-005",
+    "name": "Core Crusher",
+    "grade": "V6",
+    "board": "kilter",
+    "setter": "Magnus Midtbø",
+    "holds": ["A8", "B1", "C3", "D6", "E2", "F9", "G5", "H7"]
+  },
+  {
+    "id": "tension-004",
+    "name": "The Gaston",
+    "grade": "V5",
+    "board": "tension",
+    "setter": "Alex Honnold",
+    "holds": ["A5", "B9", "C2", "D7", "E4", "F8", "G3", "H6"]
+  },
+  {
+    "id": "kilter-006",
+    "name": "Powerful Moves",
+    "grade": "V8",
+    "board": "kilter",
+    "setter": "Adam Ondra",
+    "holds": ["A9", "B4", "C6", "D3", "E7", "F2", "G8", "H1"]
+  },
+  {
+    "id": "tension-005",
+    "name": "Tech Fest",
+    "grade": "V6",
+    "board": "tension",
+    "setter": "Ashima Shiraishi",
+    "holds": ["A3", "B7", "C1", "D5", "E9", "F4", "G6", "H8"]
+  },
+  {
+    "id": "kilter-007",
+    "name": "The Compression",
+    "grade": "V7",
+    "board": "kilter",
+    "setter": "Magnus Midtbø",
+    "holds": ["A2", "B5", "C8", "D1", "E6", "F3", "G9", "H4"]
+  }
+]
