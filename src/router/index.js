@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from "vue-router";
 import Home from "../views/Home.vue";
 import ClimbView from "../views/ClimbView.vue";
+import CreateProblem from "../views/CreateProblem.vue";
 
 const routes = [
   {
@@ -9,7 +10,12 @@ const routes = [
     component: Home,
   },
   {
-    path: "/:board/:problemId",
+    path: "/create",
+    name: "CreateProblem",
+    component: CreateProblem,
+  },
+  {
+    path: "/:size/:problemId",
     name: "ClimbView",
     component: ClimbView,
     props: true,

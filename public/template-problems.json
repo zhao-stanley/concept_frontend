@@ -3,96 +3,80 @@
     "id": "kilter-001",
     "name": "Crimp City",
     "grade": "V5",
-    "board": "kilter",
+    "size": "12x12",
+    "angle": 40,
     "setter": "Alex Honnold",
-    "holds": ["A5", "B7", "C3", "D8", "E4", "F6", "G2", "H9"]
+    "holds": ["5,3", "7,5", "3,7", "8,9", "4,11", "6,13"],
+    "feet": ["9,1", "12,2", "7,5"]
   },
   {
     "id": "kilter-002",
     "name": "Sloper's Paradise",
     "grade": "V7",
-    "board": "kilter",
+    "size": "12x12",
+    "angle": 45,
     "setter": "Adam Ondra",
-    "holds": ["A2", "B4", "C6", "D8", "E5", "F7", "G3", "H1"]
-  },
-  {
-    "id": "tension-001",
-    "name": "Pinch Perfect",
-    "grade": "V6",
-    "board": "tension",
-    "setter": "Ashima Shiraishi",
-    "holds": ["A3", "B5", "C7", "D2", "E6", "F4", "G8", "H5"]
+    "holds": ["2,4", "4,6", "6,8", "8,10", "5,12", "7,14"],
+    "feet": ["3,3", "10,4", "5,7"]
   },
   {
     "id": "kilter-003",
     "name": "The Roof Problem",
     "grade": "V8",
-    "board": "kilter",
+    "size": "10x12",
+    "angle": 55,
     "setter": "Magnus Midtbø",
-    "holds": ["A1", "B3", "C5", "D7", "E9", "F2", "G4", "H6"]
-  },
-  {
-    "id": "tension-002",
-    "name": "Dyno King",
-    "grade": "V4",
-    "board": "tension",
-    "setter": "Alex Honnold",
-    "holds": ["A6", "B8", "C4", "D1", "E7", "F3", "G5", "H2"]
+    "holds": ["2,3", "4,5", "6,7", "8,9", "3,11", "7,13"],
+    "feet": ["5,3", "6,4", "7,7"]
   },
   {
     "id": "kilter-004",
     "name": "Balance Beam",
     "grade": "V5",
-    "board": "kilter",
+    "size": "10x12",
+    "angle": 30,
     "setter": "Adam Ondra",
-    "holds": ["A4", "B6", "C8", "D5", "E3", "F1", "G7", "H4"]
-  },
-  {
-    "id": "tension-003",
-    "name": "Heel Hook Heaven",
-    "grade": "V7",
-    "board": "tension",
-    "setter": "Ashima Shiraishi",
-    "holds": ["A7", "B2", "C9", "D4", "E8", "F5", "G1", "H3"]
+    "holds": ["3,4", "5,6", "7,8", "4,10", "2,12", "6,14"],
+    "feet": ["5,3", "8,4", "5,9"]
   },
   {
     "id": "kilter-005",
     "name": "Core Crusher",
     "grade": "V6",
-    "board": "kilter",
+    "size": "12x12",
+    "angle": 50,
     "setter": "Magnus Midtbø",
-    "holds": ["A8", "B1", "C3", "D6", "E2", "F9", "G5", "H7"]
-  },
-  {
-    "id": "tension-004",
-    "name": "The Gaston",
-    "grade": "V5",
-    "board": "tension",
-    "setter": "Alex Honnold",
-    "holds": ["A5", "B9", "C2", "D7", "E4", "F8", "G3", "H6"]
+    "holds": ["8,4", "1,6", "3,8", "6,10", "2,12", "9,14"],
+    "feet": ["5,5", "12,6", "7,9"]
   },
   {
     "id": "kilter-006",
     "name": "Powerful Moves",
     "grade": "V8",
-    "board": "kilter",
+    "size": "12x12",
+    "angle": 60,
     "setter": "Adam Ondra",
-    "holds": ["A9", "B4", "C6", "D3", "E7", "F2", "G8", "H1"]
-  },
-  {
-    "id": "tension-005",
-    "name": "Tech Fest",
-    "grade": "V6",
-    "board": "tension",
-    "setter": "Ashima Shiraishi",
-    "holds": ["A3", "B7", "C1", "D5", "E9", "F4", "G6", "H8"]
+    "holds": ["9,3", "4,5", "6,7", "3,9", "7,11", "2,13"],
+    "feet": ["8,2", "11,3", "6,6"]
   },
   {
     "id": "kilter-007",
     "name": "The Compression",
     "grade": "V7",
-    "board": "kilter",
+    "size": "10x12",
+    "angle": 35,
     "setter": "Magnus Midtbø",
-    "holds": ["A2", "B5", "C8", "D1", "E6", "F3", "G9", "H4"]
+    "holds": ["2,4", "4,6", "7,8", "3,10", "6,12", "4,14"],
+    "feet": ["7,5", "8,6", "5,9"]
+  },
+  {
+    "id": "kilter-008",
+    "name": "Small Board Challenge",
+    "grade": "V4",
+    "size": "10x12",
+    "angle": 25,
+    "setter": "Alex Honnold",
+    "holds": ["3,4", "5,6", "7,8", "4,10", "6,12"],
+    "feet": ["5,3", "6,4", "7,7"]
   }
 ]

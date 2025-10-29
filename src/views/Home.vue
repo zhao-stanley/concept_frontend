@@ -1,8 +1,15 @@
 <script setup>
 import { ref, onMounted } from "vue";
+import { useRouter } from "vue-router";
 import ProblemCard from "../components/ProblemCard.vue";
 import SearchPanel from "../components/SearchPanel.vue";
 import { problemAPI } from "../services/api";
+
+const router = useRouter();
+
+function goToCreate() {
+  router.push({ name: "CreateProblem" });
+}
 
 const problems = ref([]);
 const loading = ref(false);
@@ -45,8 +52,8 @@ async function handleSearch(filters) {
     let allProblems = await response.json();
 
     // Apply filters
-    if (filters.board) {
-      allProblems = allProblems.filter((p) => p.board === filters.board);
+    if (filters.size) {
+      allProblems = allProblems.filter((p) => p.size === filters.size);
     }
 
     if (filters.gradeMin || filters.gradeMax) {
@@ -105,6 +112,10 @@ async function handleSearch(filters) {
       );
     }
 
+    if (filters.angle !== null) {
+      allProblems = allProblems.filter((p) => p.angle === filters.angle);
+    }
+
     problems.value = allProblems;
   } catch (err) {
     error.value = err.message;
@@ -119,6 +130,10 @@ async function handleSearch(filters) {
     <div class="main-content">
       <header class="page-header">
         <h1>Boardlord</h1>
+        <button class="create-btn" @click="goToCreate">
+          <span class="plus-icon">+</span>
+          Create Problem
+        </button>
       </header>
 
       <div v-if="loading" class="loading-container">
@@ -175,12 +190,41 @@ async function handleSearch(filters) {
   padding: 2rem 2rem 1.5rem 2rem;
   background: #242424;
   border-bottom: 1px solid #333;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .page-header h1 {
   margin: 0;
   font-size: 2rem;
   color: #e0e0e0;
+}
+
+.create-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  background: #42b983;
+  border: none;
+  border-radius: 6px;
+  color: white;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.create-btn:hover {
+  background: #35a372;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(66, 185, 131, 0.4);
+}
+
+.plus-icon {
+  font-size: 1.5rem;
+  line-height: 1;
 }
 
 .problems-grid {

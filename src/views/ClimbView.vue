@@ -1,6 +1,7 @@
 <script setup>
 import { ref, computed, onMounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
+import BoardDisplay from "../components/BoardDisplay.vue";
 
 const route = useRoute();
 const router = useRouter();
@@ -27,7 +28,7 @@ async function loadProblem() {
 
     // Find the problem matching the route params
     const foundProblem = problems.find(
-      (p) => p.id === route.params.problemId && p.board === route.params.board
+      (p) => p.id === route.params.problemId && p.size === route.params.size
     );
 
     if (!foundProblem) {
@@ -46,32 +47,26 @@ function goBack() {
   router.push({ name: "Home" });
 }
 
-// Board images mapping
+// Board images mapping by size
 const boardImageMap = {
-  kilter: {
-    feet: "/board/12x12-kilter-feet.png",
-    holds: "/board/12x12-kilter-holds.png",
+  "12x12": {
+    feet: "/board/12x12-feet.png",
+    holds: "/board/12x12-holds.png",
   },
-  tension: {
-    feet: "/board/12x12-tb2-wood.png",
-    holds: "/board/12x12-tb2-plastic.png",
+  "10x12": {
+    feet: "/board/10x12-feet.png",
+    holds: "/board/10x12-holds.png",
   },
-};
-
-// Map board values to display names
-const boardDisplayNames = {
-  kilter: "Kilter Board",
-  tension: "Tension Board",
 };
 
 const boardImages = computed(() => {
   if (!problem.value) return null;
-  return boardImageMap[problem.value.board];
+  return boardImageMap[problem.value.size];
 });
 
 const boardDisplayName = computed(() => {
   if (!problem.value) return "";
-  return boardDisplayNames[problem.value.board] || problem.value.board;
+  return `Kilter Board ${problem.value.size}`;
 });
 
 // Mock data for beta videos (in real app, this would come from API)
@@ -106,18 +101,12 @@ const betaVideos = ref([
       <div class="climb-view-content">
         <!-- Left side: Large board visualization -->
         <div class="board-section">
-          <div class="board-visualization-large" v-if="boardImages">
-            <img
-              :src="boardImages.feet"
-              alt="Board feet"
-              class="board-layer"
-              draggable="false"
-            />
-            <img
-              :src="boardImages.holds"
-              alt="Board holds"
-              class="board-layer"
-              draggable="false"
+          <div class="board-visualization-large">
+            <BoardDisplay
+              :size="problem.size"
+              :holds="problem.holds || []"
+              :feet="problem.feet || []"
+              :show-labels="false"
             />
           </div>
         </div>
@@ -146,17 +135,23 @@ const betaVideos = ref([
               </div>
               <div class="metadata-item">
                 <span class="metadata-label">Angle</span>
-                <span class="metadata-value">50°</span>
+                <span class="metadata-value">{{ problem.angle }}°</span>
               </div>
               <div class="metadata-item">
                 <span class="metadata-label">Layout</span>
-                <span class="metadata-value">12x12</span>
+                <span class="metadata-value">{{ problem.size }}</span>
               </div>
               <div class="metadata-item">
                 <span class="metadata-label">Holds</span>
-                <span class="metadata-value">{{
-                  problem.holds.join(", ")
-                }}</span>
+                <span class="metadata-value"
+                  >{{ problem.holds?.length || 0 }} positions</span
+                >
+              </div>
+              <div class="metadata-item">
+                <span class="metadata-label">Feet</span>
+                <span class="metadata-value"
+                  >{{ problem.feet?.length || 0 }} positions</span
+                >
               </div>
             </div>
           </div>
@@ -278,7 +273,7 @@ const betaVideos = ref([
 /* Left side - Board visualization */
 .board-section {
   flex: 0 0 55%;
-  background: #1a1a1a;
+  background: #000;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -291,7 +286,26 @@ const betaVideos = ref([
   position: relative;
   width: 100%;
   max-width: 800px;
-  aspect-ratio: 1;
+  max-height: calc(100vh - 4rem);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.board-visualization-large :deep(.board-display) {
+  max-height: 100%;
+  width: auto;
+}
+
+.board-visualization-large :deep(.board-container) {
+  max-height: 100%;
+  width: auto;
+}
+
+.board-visualization-large :deep(.board-image) {
+  max-height: calc(100vh - 4rem);
+  width: auto !important;
+  object-fit: contain;
 }
 
 .board-layer {

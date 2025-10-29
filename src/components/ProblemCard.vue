@@ -1,6 +1,7 @@
 <script setup>
 import { defineProps, computed } from "vue";
 import { useRouter } from "vue-router";
+import BoardDisplay from "./BoardDisplay.vue";
 
 const props = defineProps({
   problem: {
@@ -12,60 +13,46 @@ const props = defineProps({
 const router = useRouter();
 
 function handleClick() {
-  // Navigate to /:board/:problemId
+  // Navigate to /:size/:problemId
   router.push({
     name: "ClimbView",
     params: {
-      board: props.problem.board,
+      size: props.problem.size,
       problemId: props.problem.id,
     },
   });
 }
 
-// Map board names to their image files
+// Map board sizes to their image files
 const boardImageMap = {
-  kilter: {
-    feet: "/board/12x12-kilter-feet.png",
-    holds: "/board/12x12-kilter-holds.png",
+  "12x12": {
+    feet: "/board/12x12-feet.png",
+    holds: "/board/12x12-holds.png",
   },
-  tension: {
-    feet: "/board/12x12-tb2-wood.png",
-    holds: "/board/12x12-tb2-plastic.png",
+  "10x12": {
+    feet: "/board/10x12-feet.png",
+    holds: "/board/10x12-holds.png",
   },
-};
-
-// Map board values to display names
-const boardDisplayNames = {
-  kilter: "Kilter Board",
-  tension: "Tension Board",
 };
 
 const boardImages = computed(() => {
-  return boardImageMap[props.problem.board];
+  return boardImageMap[props.problem.size];
 });
 
 const boardDisplayName = computed(() => {
-  return boardDisplayNames[props.problem.board] || props.problem.board;
+  return `Kilter Board ${props.problem.size}`;
 });
 </script>
 
 <template>
   <div class="problem-card" @click="handleClick">
     <div class="board-visualization">
-      <div class="board-container">
-        <img
-          :src="boardImages.feet"
-          alt="Board feet"
-          class="board-layer board-feet"
-          draggable="false"
-        />
-        <img
-          :src="boardImages.holds"
-          alt="Board holds"
-          class="board-layer board-holds"
-          draggable="false"
-        />
-      </div>
+      <BoardDisplay
+        :size="problem.size"
+        :holds="problem.holds || []"
+        :feet="problem.feet || []"
+        :show-labels="false"
+      />
     </div>
     <div class="problem-info">
       <h3 class="problem-name">{{ problem.name }}</h3>
@@ -101,43 +88,28 @@ const boardDisplayName = computed(() => {
 
 .board-visualization {
   width: 100%;
-  aspect-ratio: 1;
+  height: 300px;
   background: #000;
-  position: relative;
-  overflow: hidden;
   box-shadow: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.board-container {
-  width: 100%;
-  height: 100%;
-  position: relative;
-  box-shadow: none;
+.board-visualization :deep(.board-display) {
+  max-height: 100%;
+  width: auto;
 }
 
-.board-layer {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
+.board-visualization :deep(.board-container) {
+  max-height: 100%;
+  width: auto;
+}
+
+.board-visualization :deep(.board-image) {
+  max-height: 300px;
+  width: auto !important;
   object-fit: contain;
-  display: block;
-  box-shadow: none;
-  user-select: none;
-  -webkit-user-drag: none;
-  -webkit-user-select: none;
-  -moz-user-select: none;
-  -ms-user-select: none;
-  pointer-events: none;
-}
-
-.board-feet {
-  z-index: 1;
-}
-
-.board-holds {
-  z-index: 2;
 }
 
 .problem-info {

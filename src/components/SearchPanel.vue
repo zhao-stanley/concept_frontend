@@ -1,52 +1,97 @@
 <script setup>
-import { ref, computed, defineEmits, onMounted, onUnmounted } from "vue";
+import { ref, computed, defineEmits, onMounted, onUnmounted, watch } from "vue";
+import InteractiveBoard from "./InteractiveBoard.vue";
 
 const emit = defineEmits(["search", "update:collapsed"]);
 
 const activeTab = ref("search");
 const isCollapsed = ref(true);
 const panelRef = ref(null);
+const showAdvancedFilters = ref(false);
 
 // Search filters
 const filters = ref({
-  board: "",
+  size: "",
   gradeMin: "",
   gradeMax: "",
+  angle: null,
   setter: "",
-  holds: [],
+  coordinates: [], // Array of {x, y, id} objects
 });
 
 // Track last applied filters
 const appliedFilters = ref({
-  board: "",
+  size: "",
   gradeMin: "",
   gradeMax: "",
+  angle: null,
   setter: "",
-  holds: [],
+  coordinates: [],
 });
 
 // Check if current filters differ from applied filters
 const hasFilterChanges = computed(() => {
   return (
-    filters.value.board !== appliedFilters.value.board ||
+    filters.value.size !== appliedFilters.value.size ||
     filters.value.gradeMin !== appliedFilters.value.gradeMin ||
     filters.value.gradeMax !== appliedFilters.value.gradeMax ||
+    filters.value.angle !== appliedFilters.value.angle ||
     filters.value.setter !== appliedFilters.value.setter ||
-    JSON.stringify(filters.value.holds) !==
-      JSON.stringify(appliedFilters.value.holds)
+    JSON.stringify(filters.value.coordinates) !==
+      JSON.stringify(appliedFilters.value.coordinates)
   );
 });
 
 // Check if any filters are currently set
 const hasActiveFilters = computed(() => {
   return (
-    filters.value.board !== "" ||
+    filters.value.size !== "" ||
     filters.value.gradeMin !== "" ||
     filters.value.gradeMax !== "" ||
+    filters.value.angle !== null ||
     filters.value.setter !== "" ||
-    filters.value.holds.length > 0
+    filters.value.coordinates.length > 0
   );
 });
+
+// Check if angle is valid
+const isAngleValid = computed(() => {
+  if (filters.value.angle === null) return true; // No angle is valid
+  return filters.value.angle >= 0 && filters.value.angle <= 70;
+});
+
+// Prevent non-numeric input for angle
+function preventNonNumericInput(event) {
+  // Allow: backspace, delete, tab, escape, enter
+  const allowedKeys = [
+    "Backspace",
+    "Delete",
+    "Tab",
+    "Escape",
+    "Enter",
+    "ArrowLeft",
+    "ArrowRight",
+    "ArrowUp",
+    "ArrowDown",
+  ];
+
+  if (allowedKeys.includes(event.key)) {
+    return; // Allow these keys
+  }
+
+  // Allow Ctrl/Cmd + A, C, V, X (select all, copy, paste, cut)
+  if (
+    (event.ctrlKey || event.metaKey) &&
+    ["a", "c", "v", "x"].includes(event.key.toLowerCase())
+  ) {
+    return;
+  }
+
+  // Prevent if not a number (0-9)
+  if (!/^\d$/.test(event.key)) {
+    event.preventDefault();
+  }
+}
 
 const gradeValues = [
   "V0",
@@ -68,13 +113,21 @@ const gradeValues = [
   "V16",
   "V17",
 ];
-const boardValues = ["kilter", "tension"];
+const sizeValues = ["12x12", "10x12"];
 
-// Map board values to display names
-const boardDisplayNames = {
-  kilter: "Kilter Board",
-  tension: "Tension Board",
+// Map size values to display names
+const sizeDisplayNames = {
+  "12x12": "Kilter Board 12x12",
+  "10x12": "Kilter Board 10x12",
 };
+
+// Clear coordinates when board size changes
+watch(
+  () => filters.value.size,
+  () => {
+    filters.value.coordinates = [];
+  }
+);
 
 function toggleCollapse() {
   isCollapsed.value = !isCollapsed.value;
@@ -107,38 +160,88 @@ function handleSearch() {
 }
 
 function clearFilters() {
-  filters.value = {
-    board: "",
-    gradeMin: "",
-    gradeMax: "",
-    setter: "",
-    holds: [],
-  };
+  filters.value.size = "";
+  filters.value.gradeMin = "";
+  filters.value.gradeMax = "";
+  filters.value.angle = null;
+  filters.value.setter = "";
+  filters.value.coordinates = [];
   appliedFilters.value = {
-    board: "",
+    size: "",
     gradeMin: "",
     gradeMax: "",
+    angle: null,
     setter: "",
-    holds: [],
+    coordinates: [],
   };
   handleSearch();
 }
 
 // Board images for Hold Search visualization
 const boardImageMap = {
-  kilter: {
-    feet: "/board/12x12-kilter-feet.png",
-    holds: "/board/12x12-kilter-holds.png",
+  "12x12": {
+    feet: "/board/12x12-feet.png",
+    holds: "/board/12x12-holds.png",
   },
-  tension: {
-    feet: "/board/12x12-tb2-wood.png",
-    holds: "/board/12x12-tb2-plastic.png",
+  "10x12": {
+    feet: "/board/10x12-feet.png",
+    holds: "/board/10x12-holds.png",
   },
 };
 
 const boardImages = computed(() => {
-  return boardImageMap[filters.value.board] || null;
+  return boardImageMap[filters.value.size] || null;
 });
+
+function handleCoordinateSelected(coord) {
+  filters.value.coordinates.push(coord);
+}
+
+function handleCoordinateDeselected(coord) {
+  const index = filters.value.coordinates.findIndex((c) => c.id === coord.id);
+  if (index > -1) {
+    filters.value.coordinates.splice(index, 1);
+  }
+}
+
+function clearSelectedHolds() {
+  filters.value.coordinates = [];
+}
+
+function clearAdvancedFilters() {
+  filters.value.gradeMin = "";
+  filters.value.gradeMax = "";
+  filters.value.angle = null;
+  filters.value.setter = "";
+}
+
+function handleHoldSearch() {
+  // Combine holds and feet coordinates (API treats them as one set)
+  const holds = filters.value.coordinates.map((c) => `${c.col},${c.row}`);
+
+  // Build query matching API specification
+  const query = {
+    boardType: filters.value.size,
+    holds: holds,
+  };
+
+  // Add optional parameters if they exist
+  if (filters.value.gradeMin) {
+    query.gradeMin = filters.value.gradeMin.toLowerCase(); // Convert to "vN" format
+  }
+  if (filters.value.gradeMax) {
+    query.gradeMax = filters.value.gradeMax.toLowerCase(); // Convert to "vN" format
+  }
+  if (filters.value.angle !== null) {
+    query.angle = filters.value.angle;
+  }
+  if (filters.value.setter) {
+    query.setterName = filters.value.setter;
+  }
+
+  // For now, just log the query (will call API later)
+  console.log("API Query for searchProblems():", query);
+}
 </script>
 
 <template>
@@ -170,11 +273,11 @@ const boardImages = computed(() => {
 
       <div v-if="activeTab === 'search'" class="search-content">
         <div class="filter-section">
-          <label class="filter-label">Board</label>
-          <select v-model="filters.board" class="filter-select">
-            <option value="">All Boards</option>
-            <option v-for="board in boardValues" :key="board" :value="board">
-              {{ boardDisplayNames[board] }}
+          <label class="filter-label">Board Size</label>
+          <select v-model="filters.size" class="filter-select">
+            <option value="">All Sizes</option>
+            <option v-for="size in sizeValues" :key="size" :value="size">
+              {{ sizeDisplayNames[size] }}
             </option>
           </select>
         </div>
@@ -199,6 +302,20 @@ const boardImages = computed(() => {
         </div>
 
         <div class="filter-section">
+          <label class="filter-label">Board Angle (0-70°)</label>
+          <input
+            v-model.number="filters.angle"
+            type="number"
+            min="0"
+            max="70"
+            step="1"
+            placeholder="Enter angle"
+            class="filter-input"
+            @keydown="preventNonNumericInput"
+          />
+        </div>
+
+        <div class="filter-section">
           <label class="filter-label">Setter</label>
           <input
             v-model="filters.setter"
@@ -212,7 +329,7 @@ const boardImages = computed(() => {
           <button
             @click="handleSearch"
             class="btn-primary"
-            :disabled="!hasFilterChanges"
+            :disabled="!hasFilterChanges || !isAngleValid"
           >
             Search Climbs
           </button>
@@ -228,33 +345,123 @@ const boardImages = computed(() => {
 
       <div v-else class="hold-search-content">
         <p class="info-text">
-          Hold Search allows you to select specific holds on a board
-          visualization and find climbs that use those holds.
+          Click on holds or feet to select them, then search for climbs that use
+          those positions.
         </p>
+
         <div class="board-selector">
-          <label class="filter-label">Select Board</label>
-          <select v-model="filters.board" class="filter-select">
-            <option value="">Choose a board</option>
-            <option v-for="board in boardValues" :key="board" :value="board">
-              {{ boardDisplayNames[board] }}
+          <label class="filter-label">Select Board Size</label>
+          <select v-model="filters.size" class="filter-select">
+            <option value="">Choose a board size</option>
+            <option v-for="size in sizeValues" :key="size" :value="size">
+              {{ sizeDisplayNames[size] }}
             </option>
           </select>
         </div>
-        <div v-if="boardImages" class="board-preview">
-          <div class="board-visualization">
-            <img
-              :src="boardImages.feet"
-              alt="Board feet"
-              class="board-layer"
-              draggable="false"
-            />
-            <img
-              :src="boardImages.holds"
-              alt="Board holds"
-              class="board-layer"
-              draggable="false"
-            />
+
+        <!-- Advanced Filters Collapsible -->
+        <div class="advanced-filters-section">
+          <button
+            class="advanced-filters-toggle"
+            @click="showAdvancedFilters = !showAdvancedFilters"
+          >
+            <span class="toggle-icon">{{
+              showAdvancedFilters ? "▼" : "▶"
+            }}</span>
+            Additional Filters
+          </button>
+
+          <div v-if="showAdvancedFilters" class="advanced-filters-content">
+            <div class="filter-section">
+              <label class="filter-label">Grade Range</label>
+              <div class="grade-range">
+                <select v-model="filters.gradeMin" class="filter-select">
+                  <option value="">Min</option>
+                  <option
+                    v-for="grade in gradeValues"
+                    :key="grade"
+                    :value="grade"
+                  >
+                    {{ grade }}
+                  </option>
+                </select>
+                <span class="range-separator">to</span>
+                <select v-model="filters.gradeMax" class="filter-select">
+                  <option value="">Max</option>
+                  <option
+                    v-for="grade in gradeValues"
+                    :key="grade"
+                    :value="grade"
+                  >
+                    {{ grade }}
+                  </option>
+                </select>
+              </div>
+            </div>
+
+            <div class="filter-section">
+              <label class="filter-label">Board Angle (0-70°)</label>
+              <input
+                v-model.number="filters.angle"
+                type="number"
+                min="0"
+                max="70"
+                step="1"
+                placeholder="Enter angle"
+                class="filter-input"
+                @keydown="preventNonNumericInput"
+              />
+            </div>
+
+            <div class="filter-section">
+              <label class="filter-label">Setter</label>
+              <input
+                v-model="filters.setter"
+                type="text"
+                placeholder="Enter setter name"
+                class="filter-input"
+              />
+            </div>
+
+            <button
+              @click="clearAdvancedFilters"
+              class="btn-secondary btn-small"
+              :disabled="
+                !filters.gradeMin &&
+                !filters.gradeMax &&
+                filters.angle === null &&
+                !filters.setter
+              "
+            >
+              Clear Filters
+            </button>
           </div>
+        </div>
+
+        <div v-if="filters.size" class="interactive-board-container">
+          <InteractiveBoard
+            :size="filters.size"
+            :selected-coordinates="filters.coordinates"
+            @coordinate-selected="handleCoordinateSelected"
+            @coordinate-deselected="handleCoordinateDeselected"
+          />
+        </div>
+
+        <div v-if="filters.size" class="action-buttons">
+          <button
+            @click="handleHoldSearch"
+            class="btn-primary"
+            :disabled="filters.coordinates.length === 0 || !isAngleValid"
+          >
+            Search by Holds ({{ filters.coordinates.length }})
+          </button>
+          <button
+            @click="clearSelectedHolds"
+            class="btn-secondary"
+            :disabled="filters.coordinates.length === 0"
+          >
+            Clear All
+          </button>
         </div>
       </div>
     </div>
@@ -555,5 +762,55 @@ const boardImages = computed(() => {
   -moz-user-select: none;
   -ms-user-select: none;
   pointer-events: none;
+}
+
+.interactive-board-container {
+  margin-top: 1rem;
+}
+
+.advanced-filters-section {
+  margin-bottom: 1rem;
+  background: #1a1a1a;
+  border: 1px solid #333;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.advanced-filters-toggle {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid #333;
+  color: #e0e0e0;
+  cursor: pointer;
+  font-size: 0.95rem;
+  transition: all 0.2s;
+}
+
+.advanced-filters-toggle:hover {
+  background: #2a2a2a;
+}
+
+.toggle-icon {
+  color: #42b983;
+  font-size: 0.8rem;
+  transition: transform 0.2s;
+}
+
+.advanced-filters-content {
+  padding: 1rem;
+  background: transparent;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.btn-small {
+  padding: 0.5rem 1rem;
+  font-size: 0.85rem;
 }
 </style>
