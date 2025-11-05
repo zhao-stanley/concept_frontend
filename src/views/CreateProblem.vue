@@ -2,6 +2,7 @@
 import { ref, computed, watch } from "vue";
 import { useRouter } from "vue-router";
 import InteractiveBoard from "../components/InteractiveBoard.vue";
+import { problemAPI } from "../services/api";
 
 const router = useRouter();
 
@@ -148,29 +149,32 @@ function clearAll() {
   problemData.value.feet = [];
 }
 
-function handleSubmit() {
+async function handleSubmit() {
   // Format holds and feet as coordinate strings
   const holds = problemData.value.holds.map((c) => `${c.col},${c.row}`);
   const feet = problemData.value.feet.map((c) => `${c.col},${c.row}`);
 
-  // Build query matching API specification
-  const query = {
-    name: problemData.value.name.trim(),
-    grade: problemData.value.grade.toLowerCase(), // Convert to "vN" format
-    holds: holds,
-    feet: feet,
-    boardType: problemData.value.boardType,
-    angle: problemData.value.angle,
-    setterName: problemData.value.setterName.trim(),
-  };
+  try {
+    // Call the API to create the problem
+    const response = await problemAPI.createProblem(
+      problemData.value.name.trim(),
+      problemData.value.grade.toLowerCase(),
+      holds,
+      problemData.value.boardType,
+      problemData.value.setterName.trim(),
+      problemData.value.angle,
+      feet
+    );
 
-  // For now, just log the query (will call API later)
-  console.log("API Query for createProblem():", query);
+    console.log("Problem created:", response);
 
-  // Show success message or redirect
-  alert(
-    `Problem "${query.name}" created successfully!\nCheck console for details.`
-  );
+    // Redirect to home after successful creation
+    alert(`Problem "${problemData.value.name}" created successfully!`);
+    router.push({ name: "Home" });
+  } catch (error) {
+    console.error("Failed to create problem:", error);
+    alert(`Failed to create problem: ${error.message}`);
+  }
 }
 
 function goBack() {

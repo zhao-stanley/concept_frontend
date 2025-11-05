@@ -1,24 +1,275 @@
-# API Specification: Video Concept
+# API Specification
 
-**Purpose:** store and retrieve video content from external sources
+**Base URL:** `http://localhost:8000/api`
+
+All endpoints accept POST requests with JSON bodies.
 
 ---
 
-## API Endpoints
+# Problem Concept
 
-### POST /api/Video/importVideo
+**Purpose:** Represent climbing routes on training boards with holds, difficulty, and board configuration
 
-**Description:** Imports a video from an external source using its type and URL, returning the identifier of the newly created video.
+---
+
+## POST /api/Problem/createProblem
+
+**Description:** Creates a new climbing problem with specified holds, feet positions, grade, and board configuration.
 
 **Requirements:**
 
-- true
+- `name` must be a non-empty string
+- `grade` must be a non-empty string
+- `holds` must be a non-empty array of coordinate strings
+- `feet` must be an array of coordinate strings (can be empty)
+- `boardType` must be either "12x12" or "10x12"
+- `angle` must be an integer between 0 and 70 (inclusive)
+- `setterName` must be a non-empty string
 
 **Effects:**
 
-- generate unique videoId
-- create new video with given sourceType, and url
-- return the created video
+- Generates a unique `problemId`
+- Creates and inserts a new problem document with the given attributes
+- Returns the `problemId` of the newly created problem
+
+**Request Body:**
+
+```json
+{
+  "name": "String",
+  "grade": "String",
+  "holds": ["String"],
+  "feet": ["String"],
+  "boardType": "String",
+  "angle": Number,
+  "setterName": "String"
+}
+```
+
+**Example Request:**
+
+```json
+{
+  "name": "Crimp City",
+  "grade": "V5",
+  "holds": ["5,3", "7,5", "3,7", "8,9"],
+  "feet": ["9,1", "12,2"],
+  "boardType": "12x12",
+  "angle": 45,
+  "setterName": "Alex Honnold"
+}
+```
+
+**Success Response:**
+
+```json
+{
+  "problem": "String"
+}
+```
+
+**Error Response:**
+
+```json
+{
+  "error": "string"
+}
+```
+
+---
+
+## POST /api/Problem/getProblemsByGrade
+
+**Description:** Retrieves all climbing problems matching a specific grade.
+
+**Requirements:**
+
+- `grade` must be a non-empty string
+
+**Effects:**
+
+- Returns an array of all problem documents matching the specified grade
+
+**Request Body:**
+
+```json
+{
+  "grade": "String"
+}
+```
+
+**Example Request:**
+
+```json
+{
+  "grade": "V5"
+}
+```
+
+**Success Response:**
+
+```json
+{
+  "problems": [
+    {
+      "_id": "String",
+      "name": "String",
+      "grade": "String",
+      "holds": ["String"],
+      "feet": ["String"],
+      "boardType": "String",
+      "angle": Number,
+      "setterName": "String"
+    }
+  ]
+}
+```
+
+**Error Response:**
+
+```json
+{
+  "error": "string"
+}
+```
+
+---
+
+## POST /api/Problem/searchProblems
+
+**Description:** Searches for climbing problems using multiple optional filters. Returns problems that match ALL provided criteria.
+
+**Requirements:**
+
+- At least one search parameter must be provided
+- If `gradeMin` or `gradeMax` are provided, they must follow the format "vN" where N is 0-17
+- If `angle` is provided, it must be an integer between 0 and 70
+- If `boardType` is provided, it must be either "12x12" or "10x12"
+- If `holds` are provided, they must be an array of hold coordinate strings
+- If `feet` are provided, they must be an array of foot hold coordinate strings
+
+**Effects:**
+
+- Returns all problems that satisfy ALL provided filters (AND logic)
+- **Grade filtering:** Returns problems with grades between `gradeMin` and `gradeMax` (inclusive)
+- **Board type filtering:** Returns problems with exact board type match
+- **Angle filtering:** Returns problems with exact angle match
+- **Setter name filtering:** Returns problems where setter name contains the search string (case-insensitive)
+- **Holds filtering:** Returns problems that contain ALL specified holds (must have every hold in the list)
+- **Feet filtering:** Returns problems that contain ALL specified foot holds (must have every foot hold in the list)
+
+**Request Body:**
+
+```json
+{
+  "gradeMin": "String (optional)",
+  "gradeMax": "String (optional)",
+  "boardType": "String (optional)",
+  "angle": Number (optional),
+  "setterName": "String (optional)",
+  "holds": ["String"] (optional),
+  "feet": ["String"] (optional)
+}
+```
+
+**Example Request 1 (by grade range and board type):**
+
+```json
+{
+  "gradeMin": "v4",
+  "gradeMax": "v6",
+  "boardType": "12x12",
+  "angle": 45
+}
+```
+
+**Example Request 2 (search by specific holds):**
+
+```json
+{
+  "holds": ["5,3", "7,5", "8,9"],
+  "boardType": "12x12"
+}
+```
+
+_Returns all 12x12 problems that contain holds at positions 5,3 AND 7,5 AND 8,9_
+
+**Example Request 3 (search by holds and feet):**
+
+```json
+{
+  "holds": ["5,3", "7,5"],
+  "feet": ["9,1", "12,2"],
+  "boardType": "12x12"
+}
+```
+
+_Returns all 12x12 problems that contain both holds (5,3 AND 7,5) AND both foot holds (9,1 AND 12,2)_
+
+**Example Request 4 (combined filters):**
+
+```json
+{
+  "gradeMin": "v5",
+  "gradeMax": "v7",
+  "boardType": "10x12",
+  "angle": 40,
+  "setterName": "Alex",
+  "holds": ["3,4", "6,7"],
+  "feet": ["8,2"]
+}
+```
+
+_Returns all problems that match ALL criteria: grade v5-v7, 10x12 board, 40° angle, setter name contains "Alex", contains holds 3,4 and 6,7, AND contains foot hold 8,2_
+
+**Success Response:**
+
+```json
+{
+  "problems": [
+    {
+      "_id": "String",
+      "name": "String",
+      "grade": "String",
+      "holds": ["String"],
+      "feet": ["String"],
+      "boardType": "String",
+      "angle": Number,
+      "setterName": "String"
+    }
+  ]
+}
+```
+
+**Error Response:**
+
+```json
+{
+  "error": "string"
+}
+```
+
+---
+
+# Video Concept
+
+**Purpose:** Store and retrieve video content from external sources
+
+---
+
+## POST /api/Video/importVideo
+
+**Description:** Imports a video from an external source using its type and URL.
+
+**Requirements:**
+
+- A video with the given `sourceType` and `url` must not already exist
+
+**Effects:**
+
+- Generates a unique `videoId`
+- Creates a new video entry with the provided `sourceType` and `url`
+- Returns the ID of the newly created video
 
 **Request Body:**
 
@@ -29,7 +280,16 @@
 }
 ```
 
-**Success Response Body (Action):**
+**Example Request:**
+
+```json
+{
+  "sourceType": "youtube",
+  "url": "https://youtube.com/watch?v=..."
+}
+```
+
+**Success Response:**
 
 ```json
 {
@@ -37,7 +297,7 @@
 }
 ```
 
-**Error Response Body:**
+**Error Response:**
 
 ```json
 {
@@ -47,17 +307,17 @@
 
 ---
 
-### POST /api/Video/getVideo
+## POST /api/Video/getVideo
 
 **Description:** Retrieves the identifier of a video by its unique ID.
 
 **Requirements:**
 
-- true
+- The video with the specified `videoId` must exist
 
 **Effects:**
 
-- return the video with the specified videoId
+- Returns the ID of the video corresponding to the `videoId`
 
 **Request Body:**
 
@@ -67,7 +327,7 @@
 }
 ```
 
-**Success Response Body (Action):**
+**Success Response:**
 
 ```json
 {
@@ -75,7 +335,7 @@
 }
 ```
 
-**Error Response Body:**
+**Error Response:**
 
 ```json
 {
@@ -85,17 +345,17 @@
 
 ---
 
-### POST /api/Video/removeVideo
+## POST /api/Video/removeVideo
 
 **Description:** Removes a video identified by its unique ID from the system.
 
 **Requirements:**
 
-- video with videoId exists
+- The video with the specified `videoId` must exist
 
 **Effects:**
 
-- remove video from Videos
+- Removes the video from the Videos collection
 
 **Request Body:**
 
@@ -105,13 +365,13 @@
 }
 ```
 
-**Success Response Body (Action):**
+**Success Response:**
 
 ```json
 {}
 ```
 
-**Error Response Body:**
+**Error Response:**
 
 ```json
 {
@@ -121,25 +381,68 @@
 
 ---
 
-# API Specification: Tagging Concept
+## POST /api/Video/\_getVideoDetails
 
-**Purpose:** associate items with descriptive labels for organization and discovery
-
----
-
-## API Endpoints
-
-### POST /api/Tagging/tag
-
-**Description:** Associates an item with a set of descriptive labels, adding or updating its tags.
+**Description:** Retrieves full details of a video including sourceType and URL.
 
 **Requirements:**
 
-- true
+- The video with the specified `videoId` must exist
 
 **Effects:**
 
-- add or update Tags[item] to include labels
+- Returns the complete video document with all fields
+
+**Request Body:**
+
+```json
+{
+  "videoId": "String"
+}
+```
+
+**Success Response:**
+
+```json
+{
+  "_id": "String",
+  "sourceType": "String",
+  "url": "String"
+}
+```
+
+**Error Response:**
+
+```json
+{
+  "error": "string"
+}
+```
+
+---
+
+# Tagging Concept
+
+**Purpose:** Associate items with descriptive labels for organization and discovery
+
+**Note:** The Tagging concept is used to link videos to problems. Use it to attach demonstration videos to climbing problems.
+
+---
+
+## POST /api/Tagging/tag
+
+**Description:** Associates an item (e.g., problem) with labels (e.g., video IDs).
+
+**Requirements:**
+
+- `item` must be a valid ID
+- `labels` must be an array of strings (can be empty)
+
+**Effects:**
+
+- Adds or updates tags for the specified item
+- Creates the item entry if it doesn't exist
+- New labels are added to existing labels (set union)
 
 **Request Body:**
 
@@ -150,13 +453,22 @@
 }
 ```
 
-**Success Response Body (Action):**
+**Example Request (linking videos to a problem):**
+
+```json
+{
+  "item": "problem-id-123",
+  "labels": ["video-id-456", "video-id-789"]
+}
+```
+
+**Success Response:**
 
 ```json
 {}
 ```
 
-**Error Response Body:**
+**Error Response:**
 
 ```json
 {
@@ -166,17 +478,17 @@
 
 ---
 
-### POST /api/Tagging/getItemsByTag
+## POST /api/Tagging/\_getItemsByTag
 
-**Description:** Retrieves identifiers of all items that have been tagged with a specific label.
+**Description:** Retrieves all items that have been tagged with a specific label.
 
 **Requirements:**
 
-- true
+- `label` must be a non-empty string
 
 **Effects:**
 
-- return all items that have been tagged with the specified label
+- Returns all items (e.g., problems) associated with the specified label (e.g., video ID)
 
 **Request Body:**
 
@@ -186,35 +498,47 @@
 }
 ```
 
-**Success Response Body (Action):**
+**Example Request (find all problems with a specific video):**
 
 ```json
 {
-  "items": ["String"]
+  "label": "video-id-456"
 }
 ```
 
-**Error Response Body:**
+**Success Response:**
 
 ```json
-{
-  "error": "string"
-}
+[
+  {
+    "item": "String"
+  }
+]
+```
+
+**Error Response:**
+
+```json
+[
+  {
+    "error": "string"
+  }
+]
 ```
 
 ---
 
-### POST /api/Tagging/getTags
+## POST /api/Tagging/\_getTags
 
-**Description:** Retrieves all tags associated with a specific item.
+**Description:** Retrieves all tags (e.g., video IDs) associated with a specific item (e.g., problem).
 
 **Requirements:**
 
-- true
+- `item` must be a valid ID
 
 **Effects:**
 
-- return all tags associated with the specified item
+- Returns all tags associated with the specified item
 
 **Request Body:**
 
@@ -224,35 +548,48 @@
 }
 ```
 
-**Success Response Body (Action):**
+**Example Request (get all videos for a problem):**
 
 ```json
 {
-  "tags": ["String"]
+  "item": "problem-id-123"
 }
 ```
 
-**Error Response Body:**
+**Success Response:**
 
 ```json
-{
-  "error": "string"
-}
+[
+  {
+    "tag": "String"
+  }
+]
+```
+
+**Error Response:**
+
+```json
+[
+  {
+    "error": "string"
+  }
+]
 ```
 
 ---
 
-### POST /api/Tagging/removeTag
+## POST /api/Tagging/removeTag
 
 **Description:** Removes a specific label from an item.
 
 **Requirements:**
 
-- item exists in Tags
+- `item` must exist in the Tags collection
+- `label` must be a non-empty string
 
 **Effects:**
 
-- remove label from Tags[item]
+- Removes the specified label from the item's tag set
 
 **Request Body:**
 
@@ -263,13 +600,13 @@
 }
 ```
 
-**Success Response Body (Action):**
+**Success Response:**
 
 ```json
 {}
 ```
 
-**Error Response Body:**
+**Error Response:**
 
 ```json
 {
@@ -279,17 +616,17 @@
 
 ---
 
-### POST /api/Tagging/removeAllTags
+## POST /api/Tagging/removeAllTags
 
 **Description:** Removes all tags associated with a specific item.
 
 **Requirements:**
 
-- item exists in Tags
+- `item` must exist in the Tags collection
 
 **Effects:**
 
-- remove item from Tags
+- Removes the item entry from the Tags collection
 
 **Request Body:**
 
@@ -299,13 +636,13 @@
 }
 ```
 
-**Success Response Body (Action):**
+**Success Response:**
 
 ```json
 {}
 ```
 
-**Error Response Body:**
+**Error Response:**
 
 ```json
 {
@@ -315,128 +652,51 @@
 
 ---
 
-# API Specification: Problem Concept
+# Usage Example: Linking Videos to Problems
 
-**Purpose:** represent climbing routes on training boards with holds, difficulty, and movement patterns
+**1. Create a problem:**
 
----
-
-## API Endpoints
-
-### POST /api/Problem/createProblem
-
-**Description:** Creates a new climbing problem on a board with specified attributes, returning its identifier.
-
-**Requirements:**
-
-- true
-
-**Effects:**
-
-- generate unique problemId
-- create new problem with given attributes
-- return the created problem
-
-**Request Body:**
-
-```json
+```bash
+POST /api/Problem/createProblem
 {
-  "name": "String",
-  "grade": "String",
-  "holds": ["String"],
-  "board": "String",
-  "setter": "String"
+  "name": "Crimp City",
+  "grade": "V5",
+  "holds": ["5,3", "7,5"],
+  "feet": ["9,1"],
+  "boardType": "12x12",
+  "angle": 45,
+  "setterName": "Alex Honnold"
+}
+# Returns: { "problem": "problem-id-123" }
+```
+
+**2. Import a video:**
+
+```bash
+POST /api/Video/importVideo
+{
+  "sourceType": "youtube",
+  "url": "https://youtube.com/watch?v=..."
+}
+# Returns: { "video": "video-id-456" }
+```
+
+**3. Link the video to the problem:**
+
+```bash
+POST /api/Tagging/tag
+{
+  "item": "problem-id-123",
+  "labels": ["video-id-456"]
 }
 ```
 
-**Success Response Body (Action):**
+**4. Get all videos for a problem:**
 
-```json
+```bash
+POST /api/Tagging/_getTags
 {
-  "problem": "String"
+  "item": "problem-id-123"
 }
-```
-
-**Error Response Body:**
-
-```json
-{
-  "error": "string"
-}
-```
-
----
-
-### POST /api/Problem/getProblemsByBoard
-
-**Description:** Retrieves identifiers of all climbing problems associated with a specific board.
-
-**Requirements:**
-
-- true
-
-**Effects:**
-
-- return all problems on the specified board
-
-**Request Body:**
-
-```json
-{
-  "board": "String"
-}
-```
-
-**Success Response Body (Action):**
-
-```json
-{
-  "problems": ["String"]
-}
-```
-
-**Error Response Body:**
-
-```json
-{
-  "error": "string"
-}
-```
-
----
-
-### POST /api/Problem/getProblemsByGrade
-
-**Description:** Retrieves identifiers of all climbing problems matching a specific grade.
-
-**Requirements:**
-
-- true
-
-**Effects:**
-
-- return all problems matching the specified grade
-
-**Request Body:**
-
-```json
-{
-  "grade": "String"
-}
-```
-
-**Success Response Body (Action):**
-
-```json
-{
-  "problems": ["String"]
-}
-```
-
-**Error Response Body:**
-
-```json
-{
-  "error": "string"
-}
+# Returns: [{ "tag": "video-id-456" }]
 ```

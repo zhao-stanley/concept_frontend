@@ -2,6 +2,7 @@
 import { ref, computed, onMounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import BoardDisplay from "../components/BoardDisplay.vue";
+import { problemAPI } from "../services/api";
 
 const route = useRoute();
 const router = useRouter();
@@ -20,21 +21,25 @@ async function loadProblem() {
   error.value = "";
 
   try {
-    const response = await fetch("/template-problems.json");
-    if (!response.ok) {
-      throw new Error("Failed to load problems");
-    }
-    const problems = await response.json();
+    // Search for problems by boardType, then filter by ID client-side
+    // (backend doesn't support searching by ID directly)
+    const response = await problemAPI.searchProblems({
+      boardType: route.params.size,
+    });
 
-    // Find the problem matching the route params
-    const foundProblem = problems.find(
-      (p) => p.id === route.params.problemId && p.size === route.params.size
-    );
-
-    if (!foundProblem) {
+    if (!response.problems || response.problems.length === 0) {
       error.value = "Problem not found";
     } else {
-      problem.value = foundProblem;
+      // Find the specific problem by ID
+      const foundProblem = response.problems.find(
+        (p) => p.id === route.params.problemId
+      );
+
+      if (!foundProblem) {
+        error.value = "Problem not found";
+      } else {
+        problem.value = foundProblem;
+      }
     }
   } catch (err) {
     error.value = err.message;

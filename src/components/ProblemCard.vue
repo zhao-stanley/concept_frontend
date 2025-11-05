@@ -56,14 +56,15 @@ const boardDisplayName = computed(() => {
     </div>
     <div class="problem-info">
       <h3 class="problem-name">{{ problem.name }}</h3>
-      <div class="problem-meta">
-        <span class="grade">{{ problem.grade }}</span>
-        <span class="board">{{ boardDisplayName }}</span>
-      </div>
       <div class="problem-details">
         <span v-if="problem.setter" class="setter"
           >by {{ problem.setter }}</span
         >
+      </div>
+      <div class="problem-meta">
+        <span class="grade">{{ problem.grade }}</span>
+        <span v-if="problem.angle !== null && problem.angle !== undefined" class="angle">{{ problem.angle }}°</span>
+        <span class="board">{{ boardDisplayName }}</span>
       </div>
     </div>
   </div>
@@ -88,46 +89,64 @@ const boardDisplayName = computed(() => {
 
 .board-visualization {
   width: 100%;
-  height: 300px;
+  height: 320px;
   background: #000;
   box-shadow: none;
   display: flex;
   align-items: center;
   justify-content: center;
+  overflow: hidden;
+  padding: 0;
+  margin: 0;
 }
 
 .board-visualization :deep(.board-display) {
   max-height: 100%;
+  max-width: 100%;
   width: auto;
+  display: block;
 }
 
 .board-visualization :deep(.board-container) {
   max-height: 100%;
+  max-width: 100%;
   width: auto;
+  display: block;
 }
 
 .board-visualization :deep(.board-image) {
-  max-height: 300px;
+  max-height: 320px;
+  max-width: 100%;
   width: auto !important;
+  height: auto !important;
   object-fit: contain;
 }
 
 .problem-info {
   padding: 1rem;
+  display: flex;
+  flex-direction: column;
 }
 
 .problem-name {
-  margin: 0 0 0.5rem 0;
+  margin: 0 0 0.25rem 0;
   font-size: 1.1rem;
   color: #e0e0e0;
   font-weight: 600;
 }
 
+.problem-details {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  margin-bottom: 1rem;
+}
+
 .problem-meta {
   display: flex;
   gap: 0.5rem;
-  margin-bottom: 0.5rem;
   flex-wrap: wrap;
+  margin-top: auto;
 }
 
 .grade {
@@ -147,10 +166,13 @@ const boardDisplayName = computed(() => {
   font-size: 0.85rem;
 }
 
-.problem-details {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
+.angle {
+  background: #e67e22;
+  color: white;
+  padding: 0.25rem 0.75rem;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  font-weight: 600;
 }
 
 .setter {

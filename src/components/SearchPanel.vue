@@ -166,6 +166,7 @@ function clearFilters() {
   filters.value.angle = null;
   filters.value.setter = "";
   filters.value.coordinates = [];
+  showAdvancedFilters.value = false;
   appliedFilters.value = {
     size: "",
     gradeMin: "",
@@ -174,6 +175,7 @@ function clearFilters() {
     setter: "",
     coordinates: [],
   };
+  // Trigger search with empty filters to show all problems
   handleSearch();
 }
 
@@ -204,10 +206,6 @@ function handleCoordinateDeselected(coord) {
   }
 }
 
-function clearSelectedHolds() {
-  filters.value.coordinates = [];
-}
-
 function clearAdvancedFilters() {
   filters.value.gradeMin = "";
   filters.value.gradeMax = "";
@@ -216,31 +214,8 @@ function clearAdvancedFilters() {
 }
 
 function handleHoldSearch() {
-  // Combine holds and feet coordinates (API treats them as one set)
-  const holds = filters.value.coordinates.map((c) => `${c.col},${c.row}`);
-
-  // Build query matching API specification
-  const query = {
-    boardType: filters.value.size,
-    holds: holds,
-  };
-
-  // Add optional parameters if they exist
-  if (filters.value.gradeMin) {
-    query.gradeMin = filters.value.gradeMin.toLowerCase(); // Convert to "vN" format
-  }
-  if (filters.value.gradeMax) {
-    query.gradeMax = filters.value.gradeMax.toLowerCase(); // Convert to "vN" format
-  }
-  if (filters.value.angle !== null) {
-    query.angle = filters.value.angle;
-  }
-  if (filters.value.setter) {
-    query.setterName = filters.value.setter;
-  }
-
-  // For now, just log the query (will call API later)
-  console.log("API Query for searchProblems():", query);
+  // Trigger the main search with current filters
+  handleSearch();
 }
 </script>
 
@@ -327,14 +302,14 @@ function handleHoldSearch() {
 
         <div class="action-buttons">
           <button
-            @click="handleSearch"
+            @click.stop="handleSearch"
             class="btn-primary"
             :disabled="!hasFilterChanges || !isAngleValid"
           >
             Search Climbs
           </button>
           <button
-            @click="clearFilters"
+            @click.stop="clearFilters"
             class="btn-secondary"
             :disabled="!hasActiveFilters"
           >
@@ -447,20 +422,31 @@ function handleHoldSearch() {
           />
         </div>
 
+        <div v-if="filters.size" class="selection-summary">
+          <div class="summary-item">
+            <span class="summary-label">Holds:</span>
+            <span class="summary-value holds-color">{{ filters.coordinates.filter(c => c.type === 'hold').length }}</span>
+          </div>
+          <div class="summary-item">
+            <span class="summary-label">Feet:</span>
+            <span class="summary-value feet-color">{{ filters.coordinates.filter(c => c.type === 'feet').length }}</span>
+          </div>
+        </div>
+
         <div v-if="filters.size" class="action-buttons">
           <button
-            @click="handleHoldSearch"
+            @click.stop="handleHoldSearch"
             class="btn-primary"
             :disabled="filters.coordinates.length === 0 || !isAngleValid"
           >
-            Search by Holds ({{ filters.coordinates.length }})
+            Search
           </button>
           <button
-            @click="clearSelectedHolds"
+            @click.stop="clearFilters"
             class="btn-secondary"
-            :disabled="filters.coordinates.length === 0"
+            :disabled="!hasActiveFilters"
           >
-            Clear All
+            Reset
           </button>
         </div>
       </div>
@@ -645,6 +631,39 @@ function handleHoldSearch() {
 .checkbox-label input[type="checkbox"] {
   cursor: pointer;
   accent-color: #42b983;
+}
+
+.selection-summary {
+  display: flex;
+  gap: 1rem;
+  padding: 0.75rem;
+  background: #2a2a2a;
+  border-radius: 6px;
+  margin-top: 1rem;
+}
+
+.summary-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.summary-label {
+  font-size: 0.9rem;
+  color: #a0a0a0;
+}
+
+.summary-value {
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.holds-color {
+  color: rgb(0, 191, 255);
+}
+
+.feet-color {
+  color: rgb(255, 140, 0);
 }
 
 .action-buttons {

@@ -26,11 +26,9 @@ async function loadRecommendedProblems() {
   error.value = "";
 
   try {
-    const response = await fetch("/template-problems.json");
-    if (!response.ok) {
-      throw new Error("Failed to load problems");
-    }
-    problems.value = await response.json();
+    // Load all problems with no filters
+    const response = await problemAPI.searchProblems({});
+    problems.value = response.problems || [];
   } catch (err) {
     error.value = err.message;
   } finally {
@@ -44,79 +42,54 @@ async function handleSearch(filters) {
   error.value = "";
 
   try {
-    // Load template problems
-    const response = await fetch("/template-problems.json");
-    if (!response.ok) {
-      throw new Error("Failed to load problems");
-    }
-    let allProblems = await response.json();
+    // Build search query for backend
+    const searchQuery = {};
 
-    // Apply filters
     if (filters.size) {
-      allProblems = allProblems.filter((p) => p.size === filters.size);
+      searchQuery.boardType = filters.size;
     }
 
     if (filters.gradeMin || filters.gradeMax) {
-      const gradeValues = [
-        "V0",
-        "V1",
-        "V2",
-        "V3",
-        "V4",
-        "V5",
-        "V6",
-        "V7",
-        "V8",
-        "V9",
-        "V10",
-        "V11",
-        "V12",
-        "V13",
-        "V14",
-        "V15",
-        "V16",
-        "V17",
-      ];
-
-      allProblems = allProblems.filter((p) => {
-        const gradeIndex = gradeValues.indexOf(p.grade);
-        // Skip if grade not found in our list
-        if (gradeIndex === -1) return false;
-
-        // If only min is set: show grades >= min
-        if (filters.gradeMin && !filters.gradeMax) {
-          const minIndex = gradeValues.indexOf(filters.gradeMin);
-          return gradeIndex >= minIndex;
-        }
-
-        // If only max is set: show grades <= max
-        if (!filters.gradeMin && filters.gradeMax) {
-          const maxIndex = gradeValues.indexOf(filters.gradeMax);
-          return gradeIndex <= maxIndex;
-        }
-
-        // If both are set: show grades in range
-        if (filters.gradeMin && filters.gradeMax) {
-          const minIndex = gradeValues.indexOf(filters.gradeMin);
-          const maxIndex = gradeValues.indexOf(filters.gradeMax);
-          return gradeIndex >= minIndex && gradeIndex <= maxIndex;
-        }
-
-        return true;
-      });
+      if (filters.gradeMin && filters.gradeMax) {
+        searchQuery.gradeMin = filters.gradeMin.toLowerCase();
+        searchQuery.gradeMax = filters.gradeMax.toLowerCase();
+      } else if (filters.gradeMin) {
+        searchQuery.gradeMin = filters.gradeMin.toLowerCase();
+      } else if (filters.gradeMax) {
+        searchQuery.gradeMax = filters.gradeMax.toLowerCase();
+      }
     }
 
     if (filters.setter) {
-      allProblems = allProblems.filter((p) =>
-        p.setter?.toLowerCase().includes(filters.setter.toLowerCase())
-      );
+      searchQuery.setterName = filters.setter;
     }
 
     if (filters.angle !== null) {
-      allProblems = allProblems.filter((p) => p.angle === filters.angle);
+      searchQuery.angle = filters.angle;
     }
 
-    problems.value = allProblems;
+    if (filters.coordinates && filters.coordinates.length > 0) {
+      // Separate holds and feet for the search query
+      const holdCoordinates = filters.coordinates.filter(
+        (c) => c.type === "hold"
+      );
+      const feetCoordinates = filters.coordinates.filter(
+        (c) => c.type === "feet"
+      );
+
+      if (holdCoordinates.length > 0) {
+        // Convert coordinates to the format backend expects: ["col,row", ...]
+        searchQuery.holds = holdCoordinates.map((c) => `${c.col},${c.row}`);
+      }
+
+      if (feetCoordinates.length > 0) {
+        // Convert coordinates to the format backend expects: ["col,row", ...]
+        searchQuery.feet = feetCoordinates.map((c) => `${c.col},${c.row}`);
+      }
+    }
+
+    const response = await problemAPI.searchProblems(searchQuery);
+    problems.value = response.problems || [];
   } catch (err) {
     error.value = err.message;
   } finally {
