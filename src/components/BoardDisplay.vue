@@ -229,7 +229,6 @@ const feetPositions = computed(() => {
   width: 100%;
   background: #000;
   border-radius: 8px;
-  overflow: hidden;
   display: flex;
   justify-content: center;
   align-items: flex-start;
