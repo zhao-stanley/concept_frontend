@@ -92,7 +92,8 @@ export const videoAPI = {
       body: { sourceType, url },
     }),
   getVideo: (videoId) => apiRequest("/Video/getVideo", { body: { videoId } }),
-  removeVideo: (videoId) => apiRequest("/Video/removeVideo", { body: { videoId } }),
+  removeVideo: (videoId) =>
+    apiRequest("/Video/removeVideo", { body: { videoId } }),
   getVideoDetails: (videoId) =>
     apiRequest("/Video/_getVideoDetails", { body: { videoId } }),
 };
