@@ -2,7 +2,7 @@
 import { ref, computed, watch } from "vue";
 import { useRouter } from "vue-router";
 import InteractiveBoard from "../components/InteractiveBoard.vue";
-import { problemAPI } from "../services/api";
+import { problemAPI, videoAPI, taggingAPI } from "../services/api";
 
 const router = useRouter();
 
@@ -16,6 +16,10 @@ const problemData = ref({
   holds: [], // Array of coordinate objects
   feet: [], // Array of coordinate objects
 });
+
+// Video links state
+const videoLinks = ref([]);
+const newVideoUrl = ref("");
 
 const gradeValues = [
   "V0",
@@ -149,13 +153,31 @@ function clearAll() {
   problemData.value.feet = [];
 }
 
+function addVideo() {
+  if (newVideoUrl.value.trim()) {
+    videoLinks.value.push({
+      url: newVideoUrl.value.trim(),
+      sourceType: "youtube",
+      id: Date.now(),
+    });
+    newVideoUrl.value = "";
+  }
+}
+
+function removeVideo(id) {
+  const index = videoLinks.value.findIndex((v) => v.id === id);
+  if (index > -1) {
+    videoLinks.value.splice(index, 1);
+  }
+}
+
 async function handleSubmit() {
   // Format holds and feet as coordinate strings
   const holds = problemData.value.holds.map((c) => `${c.col},${c.row}`);
   const feet = problemData.value.feet.map((c) => `${c.col},${c.row}`);
 
   try {
-    // Call the API to create the problem
+    // Step 1: Create the problem
     const response = await problemAPI.createProblem(
       problemData.value.name.trim(),
       problemData.value.grade.toLowerCase(),
@@ -167,6 +189,33 @@ async function handleSubmit() {
     );
 
     console.log("Problem created:", response);
+    const problemId = response.problem;
+
+    // Step 2: Import videos and tag them to the problem
+    if (videoLinks.value.length > 0) {
+      const videoIds = [];
+
+      for (const video of videoLinks.value) {
+        try {
+          const videoResponse = await videoAPI.importVideo(
+            video.sourceType,
+            video.url
+          );
+          videoIds.push(videoResponse.video);
+        } catch (err) {
+          console.error("Failed to import video:", err);
+        }
+      }
+
+      // Step 3: Tag all videos to the problem
+      if (videoIds.length > 0) {
+        try {
+          await taggingAPI.tag(problemId, videoIds);
+        } catch (err) {
+          console.error("Failed to tag videos:", err);
+        }
+      }
+    }
 
     // Redirect to home after successful creation
     alert(`Problem "${problemData.value.name}" created successfully!`);
@@ -248,6 +297,43 @@ function goBack() {
               placeholder="Enter your name"
               class="form-input"
             />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Beta Videos (YouTube URLs)</label>
+            <div class="video-input-group">
+              <input
+                v-model="newVideoUrl"
+                type="text"
+                placeholder="Enter YouTube URL"
+                class="form-input video-url-input"
+                @keypress.enter.prevent="addVideo"
+              />
+              <button
+                @click="addVideo"
+                type="button"
+                class="btn-add-video"
+                :disabled="!newVideoUrl.trim()"
+              >
+                Add
+              </button>
+            </div>
+            <div v-if="videoLinks.length > 0" class="video-list">
+              <div
+                v-for="video in videoLinks"
+                :key="video.id"
+                class="video-item"
+              >
+                <span class="video-url">{{ video.url }}</span>
+                <button
+                  @click="removeVideo(video.id)"
+                  type="button"
+                  class="btn-remove-video"
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
           </div>
 
           <div class="stats-section">
@@ -531,6 +617,79 @@ function goBack() {
   border-radius: 8px;
   color: #666;
   font-size: 1.1rem;
+}
+
+.video-input-group {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.video-url-input {
+  flex: 1;
+}
+
+.btn-add-video {
+  padding: 0.75rem 1.5rem;
+  background: #42b983;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 600;
+  transition: background-color 0.2s;
+  white-space: nowrap;
+}
+
+.btn-add-video:hover:not(:disabled) {
+  background: #35a372;
+}
+
+.btn-add-video:disabled {
+  background: #2a4a3a;
+  color: #666;
+  cursor: not-allowed;
+}
+
+.video-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.video-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  background: #1a1a1a;
+  border: 1px solid #333;
+  border-radius: 4px;
+}
+
+.video-url {
+  flex: 1;
+  font-size: 0.85rem;
+  color: #a0a0a0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.btn-remove-video {
+  padding: 0.25rem 0.5rem;
+  background: #dc3545;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: background-color 0.2s;
+}
+
+.btn-remove-video:hover {
+  background: #c82333;
 }
 
 @media (max-width: 1200px) {

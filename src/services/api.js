@@ -87,19 +87,19 @@ export const problemAPI = {
 
 // Video API
 export const videoAPI = {
-  importVideo: (source, url, problemId) =>
+  importVideo: (sourceType, url) =>
     apiRequest("/Video/importVideo", {
-      body: { source, url, problemId },
+      body: { sourceType, url },
     }),
-  getVideo: (id) => apiRequest("/Video/getVideo", { body: { id } }),
-  removeVideo: (id) => apiRequest("/Video/removeVideo", { body: { id } }),
-  getVideoDetails: (id) =>
-    apiRequest("/Video/_getVideoDetails", { body: { id } }),
+  getVideo: (videoId) => apiRequest("/Video/getVideo", { body: { videoId } }),
+  removeVideo: (videoId) => apiRequest("/Video/removeVideo", { body: { videoId } }),
+  getVideoDetails: (videoId) =>
+    apiRequest("/Video/_getVideoDetails", { body: { videoId } }),
 };
 
 // Tagging API
 export const taggingAPI = {
-  tag: (item, label) => apiRequest("/Tagging/tag", { body: { item, label } }),
+  tag: (item, labels) => apiRequest("/Tagging/tag", { body: { item, labels } }),
   getItemsByTag: (label) =>
     apiRequest("/Tagging/_getItemsByTag", { body: { label } }),
   getTags: (item) => apiRequest("/Tagging/_getTags", { body: { item } }),

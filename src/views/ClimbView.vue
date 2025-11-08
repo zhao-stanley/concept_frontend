@@ -2,7 +2,7 @@
 import { ref, computed, onMounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import BoardDisplay from "../components/BoardDisplay.vue";
-import { problemAPI } from "../services/api";
+import { problemAPI, taggingAPI, videoAPI } from "../services/api";
 
 const route = useRoute();
 const router = useRouter();
@@ -10,6 +10,7 @@ const router = useRouter();
 const problem = ref(null);
 const loading = ref(true);
 const error = ref("");
+const betaVideos = ref([]);
 
 // Fetch problem data based on route params
 onMounted(async () => {
@@ -39,12 +40,67 @@ async function loadProblem() {
         error.value = "Problem not found";
       } else {
         problem.value = foundProblem;
+        // Load beta videos for this problem
+        await loadBetaVideos(foundProblem.id);
       }
     }
   } catch (err) {
     error.value = err.message;
   } finally {
     loading.value = false;
+  }
+}
+
+async function loadBetaVideos(problemId) {
+  try {
+    console.log("Loading videos for problem:", problemId);
+    // Get all video IDs tagged to this problem
+    const tagsResponse = await taggingAPI.getTags(problemId);
+    console.log("Tags response:", tagsResponse);
+
+    if (tagsResponse && tagsResponse.length > 0) {
+      // Fetch details for each video
+      const videoPromises = tagsResponse.map(async (tagItem) => {
+        try {
+          console.log("Fetching video details for tag:", tagItem.tag);
+          const videoDetails = await videoAPI.getVideoDetails(tagItem.tag);
+          console.log("Video details:", videoDetails);
+
+          // Handle if response is an array (take first item) or object
+          let videoData = Array.isArray(videoDetails)
+            ? videoDetails[0]
+            : videoDetails;
+
+          // Handle nested video property
+          if (videoData && videoData.video) {
+            videoData = videoData.video;
+          }
+
+          if (!videoData) {
+            console.error("No video data found");
+            return null;
+          }
+
+          console.log("Processed video data:", videoData);
+          return {
+            id: videoData._id,
+            url: videoData.url,
+            sourceType: videoData.sourceType,
+          };
+        } catch (err) {
+          console.error("Failed to load video details:", err);
+          return null;
+        }
+      });
+
+      const videos = await Promise.all(videoPromises);
+      betaVideos.value = videos.filter((v) => v !== null);
+      console.log("Loaded beta videos:", betaVideos.value);
+    } else {
+      console.log("No videos tagged to this problem");
+    }
+  } catch (err) {
+    console.error("Failed to load beta videos:", err);
   }
 }
 
@@ -74,13 +130,36 @@ const boardDisplayName = computed(() => {
   return `Kilter Board ${problem.value.size}`;
 });
 
-// Mock data for beta videos (in real app, this would come from API)
-const betaVideos = ref([
-  { id: 1, thumbnail: "", title: "Beta 1" },
-  { id: 2, thumbnail: "", title: "Beta 2" },
-  { id: 3, thumbnail: "", title: "Beta 3" },
-  { id: 4, thumbnail: "", title: "Beta 4" },
-]);
+// Helper to extract YouTube video ID from URL
+function getYouTubeEmbedUrl(url) {
+  try {
+    console.log("Processing URL:", url, "Type:", typeof url);
+
+    // Check if url is valid
+    if (!url || typeof url !== "string") {
+      console.error("Invalid URL provided:", url);
+      return null;
+    }
+
+    const urlObj = new URL(url);
+    let videoId = null;
+
+    if (urlObj.hostname.includes("youtube.com")) {
+      videoId = urlObj.searchParams.get("v");
+    } else if (urlObj.hostname.includes("youtu.be")) {
+      videoId = urlObj.pathname.slice(1);
+    }
+
+    const embedUrl = videoId
+      ? `https://www.youtube.com/embed/${videoId}`
+      : null;
+    console.log("Generated embed URL:", embedUrl);
+    return embedUrl;
+  } catch (err) {
+    console.error("Error processing URL:", url, err);
+    return null;
+  }
+}
 </script>
 
 <template>
@@ -164,16 +243,33 @@ const betaVideos = ref([
           <!-- Beta Videos Section -->
           <div class="section-container">
             <div class="section-header">
-              <span class="section-title">Beta Videos</span>
+              <span class="section-title"
+                >Beta Videos ({{ betaVideos.length }})</span
+              >
             </div>
-            <div class="videos-grid">
+            <div v-if="betaVideos.length > 0" class="videos-grid">
               <div
                 v-for="video in betaVideos"
                 :key="video.id"
-                class="video-thumbnail"
+                class="video-embed"
               >
-                <div class="video-placeholder"></div>
+                <iframe
+                  v-if="getYouTubeEmbedUrl(video.url)"
+                  :src="getYouTubeEmbedUrl(video.url)"
+                  frameborder="0"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowfullscreen
+                  class="video-iframe"
+                ></iframe>
+                <div v-else class="video-error">
+                  <a :href="video.url" target="_blank" rel="noopener"
+                    >View Video</a
+                  >
+                </div>
               </div>
+            </div>
+            <div v-else class="no-videos">
+              <p>No beta videos available for this problem yet.</p>
             </div>
           </div>
         </div>
@@ -413,28 +509,51 @@ const betaVideos = ref([
   background: #1a1a1a;
 }
 
-.video-thumbnail {
+.video-embed {
   aspect-ratio: 16 / 9;
   border-radius: 4px;
   overflow: hidden;
-  cursor: pointer;
-  transition: transform 0.2s, box-shadow 0.2s;
   border: 1px solid #333;
+  background: #000;
 }
 
-.video-thumbnail:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
-}
-
-.video-placeholder {
+.video-iframe {
   width: 100%;
   height: 100%;
-  background: #2a2a2a;
+  display: block;
+}
+
+.video-error {
+  width: 100%;
+  height: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #666;
+  background: #2a2a2a;
+}
+
+.video-error a {
+  color: #42b983;
+  text-decoration: none;
+  padding: 0.5rem 1rem;
+  border: 1px solid #42b983;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.video-error a:hover {
+  background: #42b983;
+  color: white;
+}
+
+.no-videos {
+  padding: 2rem;
+  text-align: center;
+  color: #888;
+}
+
+.no-videos p {
+  margin: 0;
 }
 
 /* Responsive design */
@@ -450,6 +569,10 @@ const betaVideos = ref([
   }
 
   .metadata-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .videos-grid {
     grid-template-columns: 1fr;
   }
 }
